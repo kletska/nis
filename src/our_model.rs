@@ -105,15 +105,15 @@ pub fn fast_create_big_road(from: usize, to: usize, ind: usize) -> Vec<PetriNetT
 }
 
 pub fn transitions() -> Vec<PetriNetTransition> {
-    let t_0_2 = fast_create_big_road(0, 2, 0);// 0 - 5
-    let t_1_0 = fast_create_road(1, 0, 2); // 6 - 9
-    let t_1_5 = fast_create_road(1, 5, 3); // 10 - 13
-    let t_2_3 = fast_create_road(2, 3, 4); // 14 - 18
-    let t_3_1 = fast_create_big_road(3, 1, 5); // 18 - 21
-    let t_4_0 = fast_create_road(4, 0, 7); // 22 - 27
-    let t_4_5 = fast_create_small_road(4, 5); // 28 - 29
-    let t_5_6 = fast_create_small_road(5, 6); // 30 - 31
-    let t_6_4 = fast_create_small_road(6, 4); // 32 - 33
+    let t_0_2 = fast_create_big_road(0, 2, 0);
+    let t_1_0 = fast_create_road(1, 0, 2);
+    let t_1_5 = fast_create_road(1, 5, 3); 
+    let t_2_3 = fast_create_road(2, 3, 4); 
+    let t_3_1 = fast_create_big_road(3, 1, 5); 
+    let t_4_0 = fast_create_road(4, 0, 7); 
+    let t_4_5 = fast_create_small_road(4, 5); 
+    let t_5_6 = fast_create_small_road(5, 6); 
+    let t_6_4 = fast_create_small_road(6, 4); 
 
     vec![t_0_2, t_1_0, t_1_5, t_2_3, t_3_1, t_4_0, t_4_5, t_5_6, t_6_4].concat()
 }
@@ -122,15 +122,63 @@ pub fn our_model() -> PetriNet {
     PetriNet::new(vertices_count, transitions())
 }
 
-pub fn reverse_transmition_by_cycle(t: PetriNetTransition, mut c: Vec<PetriNetTransition>) -> Option<Vec<PetriNetTransition>> {
-    let index = c.iter().position(|x| x == &t)? + 1;
+pub fn reverse_transmition_by_cycle(t: &PetriNetTransition, mut c: Vec<PetriNetTransition>) -> Option<Vec<PetriNetTransition>> {
+    let index = c.iter().position(|x| x == t)? + 1;
     c.rotate_left(index);
     c.pop();
     Some(c)
 }
 
 pub fn reverse_transmition(t: PetriNetTransition) -> Vec<PetriNetTransition> {
-    todo!()
+    let mut cycles = Vec::new();
+
+    let t_0_2_1 = &fast_create_big_road(0, 2, 0)[0..3];
+    let t_1_0_1 = &fast_create_road(1, 0, 2)[0..2];
+    let t_1_5_1 = &fast_create_road(1, 5, 3)[0..2]; 
+    let t_2_3_1 = &fast_create_road(2, 3, 4)[0..2]; 
+    let t_3_1_1 = &fast_create_big_road(3, 1, 5)[0..3]; 
+    let t_4_0_1 = &fast_create_road(4, 0, 7)[0..2]; 
+    let t_4_5_1 = &fast_create_small_road(4, 5)[0..1]; 
+    let t_5_6_1 = &fast_create_small_road(5, 6)[0..1]; 
+    let t_6_4_1 = &fast_create_small_road(6, 4)[0..1]; 
+
+    let c1 = vec![t_0_2_1, t_2_3_1, t_3_1_1, t_1_0_1].concat();
+    cycles.push(c1);
+
+    let c2 = vec![t_0_2_1, t_2_3_1, t_3_1_1, t_1_5_1, t_5_6_1, t_6_4_1, t_4_0_1].concat();
+    cycles.push(c2);
+
+    let c3 = vec![t_4_5_1, t_5_6_1, t_6_4_1].concat();
+    cycles.push(c3);
+
+    let t_0_2_2 = &fast_create_big_road(0, 2, 0)[3..6];
+    let t_1_0_2 = &fast_create_road(1, 0, 2)[2..4];
+    let t_1_5_2 = &fast_create_road(1, 5, 3)[2..4]; 
+    let t_2_3_2 = &fast_create_road(2, 3, 4)[2..4]; 
+    let t_3_1_2 = &fast_create_big_road(3, 1, 5)[3..6]; 
+    let t_4_0_2 = &fast_create_road(4, 0, 7)[2..4]; 
+    let t_4_5_2 = &fast_create_small_road(4, 5)[1..2]; 
+    let t_5_6_2 = &fast_create_small_road(5, 6)[1..2]; 
+    let t_6_4_2 = &fast_create_small_road(6, 4)[1..2];
+    
+    let c4 = vec![t_0_2_2, t_2_3_2, t_3_1_2, t_1_0_2].concat();
+    cycles.push(c4);
+
+    let c5 = vec![t_0_2_2, t_2_3_2, t_3_1_2, t_1_5_2, t_5_6_2, t_6_4_2, t_4_0_2].concat();
+    cycles.push(c5);
+
+    let c6 = vec![t_4_5_2, t_5_6_2, t_6_4_2].concat();
+    cycles.push(c6);
+    
+    cycles
+        .into_iter()
+        .map(|mut x| reverse_transmition_by_cycle(&t, x))
+        .fold(None, |prev, curr| {
+            match prev {
+                Some(x) => Some(x),
+                _ => curr
+            }
+        }).unwrap()
 }
 
 pub fn transitions_example() -> Vec<Vec<PetriNetTransition>> {
@@ -170,7 +218,12 @@ mod tests {
     use super::{our_model, paint_example};
     #[test]
     fn color_test() {
-        println!("{}", our_model().check_duality(&paint_example()));
         assert!(our_model().check_duality(&paint_example()))
+    }
+
+    use super::transitions_example;
+    #[test]
+    fn reversibility_test() {
+
     }
 }
